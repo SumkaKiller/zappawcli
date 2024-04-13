@@ -26,3 +26,17 @@ pub fn move_cursor_right(buf: &str, cursor: &mut usize) { if *cursor < char_coun
 
 pub fn move_cursor_home(cursor: &mut usize) { *cursor = 0; }
 pub fn move_cursor_end(buf: &str, cursor: &mut usize) { *cursor = char_count(buf); }
+
+pub fn delete_prev_word(buf: &mut String, cursor: &mut usize) {
+    if *cursor == 0 { return; }
+    let chars: Vec<char> = buf.chars().collect();
+    let mut pos = *cursor;
+    while pos > 0 && chars[pos - 1].is_whitespace() { pos -= 1; }
+    while pos > 0 && !chars[pos - 1].is_whitespace() { pos -= 1; }
+    let mut new_buf = String::new();
+    for (i, ch) in chars.into_iter().enumerate() {
+        if i < pos || i >= *cursor { new_buf.push(ch); }
+    }
+    *buf = new_buf;
+    *cursor = pos;
+}
