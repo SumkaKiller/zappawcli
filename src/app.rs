@@ -25,3 +25,20 @@ pub struct App {
     pub status: String,
     pub status_until: Instant,
 }
+
+impl App {
+    pub fn new(nick: &str) -> Self {
+        Self {
+            my_nick: nick.to_string(),
+            messages: vec![],
+            input: String::new(),
+            cursor: 0,
+            scroll: 0,
+            started: Instant::now(),
+            help: HelpState::Closed,
+            help_toggled_at: Instant::now(),
+            status: String::from("Ready"),
+            status_until: Instant::now(),
+        }
+    }
+}
