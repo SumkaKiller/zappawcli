@@ -46,3 +46,8 @@ impl App {
         }
     }
 }
+
+    pub fn set_status(&mut self, text: impl Into<String>, dur: Duration) {
+        self.status = text.into();
+        self.status_until = Instant::now() + dur;
+    }
