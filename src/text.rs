@@ -21,3 +21,11 @@ pub fn truncate_to_width(s: &str, max_w: usize) -> String {
     }
     out
 }
+
+pub fn pad_to_width(s: &str, target: usize) -> String {
+    let current = visible_width(s);
+    if current >= target { return truncate_to_width(s, target); }
+    let mut padded = String::from(s);
+    padded.push_str(&" ".repeat(target - current));
+    padded
+}
