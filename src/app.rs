@@ -10,3 +10,8 @@ pub enum HelpState {
     Closed,
     Open,
 }
+
+pub struct App {
+    pub my_nick: String,
+    pub messages: Vec<Message>,
+}
