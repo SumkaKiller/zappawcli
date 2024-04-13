@@ -5,3 +5,11 @@ pub fn insert_char_at_cursor(buf: &mut String, cursor: &mut usize, ch: char) {
     buf.insert(idx, ch);
     *cursor += 1;
 }
+
+pub fn delete_before_cursor(buf: &mut String, cursor: &mut usize) {
+    if *cursor == 0 { return; }
+    let from = byte_index_at_char(buf, *cursor - 1);
+    let to = byte_index_at_char(buf, *cursor);
+    buf.drain(from..to);
+    *cursor -= 1;
+}
