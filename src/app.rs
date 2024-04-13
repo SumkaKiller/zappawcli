@@ -4,3 +4,9 @@ use std::time::{Duration, Instant};
 pub struct Message {
     pub text: String,
 }
+
+#[derive(Copy, Clone)]
+pub enum HelpState {
+    Closed,
+    Open,
+}
