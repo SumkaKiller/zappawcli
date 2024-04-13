@@ -30,7 +30,11 @@ impl App {
     pub fn new(nick: &str) -> Self {
         Self {
             my_nick: nick.to_string(),
-            messages: vec![],
+            messages: vec![
+                Message { text: "Привет! Как дела?".to_string(), is_mine: false, created: Instant::now() - Duration::from_millis(300) },
+                Message { text: "Отлично, спасибо!".to_string(), is_mine: true, created: Instant::now() - Duration::from_millis(300) },
+                Message { text: "Что нового у тебя?".to_string(), is_mine: false, created: Instant::now() - Duration::from_millis(300) },
+            ],
             input: String::new(),
             cursor: 0,
             scroll: 0,
