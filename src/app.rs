@@ -51,3 +51,7 @@ impl App {
         self.status = text.into();
         self.status_until = Instant::now() + dur;
     }
+
+    pub fn help_visible(&self) -> bool {
+        matches!(self.help, HelpState::Open)
+    }
