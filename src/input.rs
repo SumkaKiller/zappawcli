@@ -13,3 +13,10 @@ pub fn delete_before_cursor(buf: &mut String, cursor: &mut usize) {
     buf.drain(from..to);
     *cursor -= 1;
 }
+
+pub fn delete_at_cursor(buf: &mut String, cursor: &mut usize) {
+    if *cursor >= char_count(buf) { return; }
+    let from = byte_index_at_char(buf, *cursor);
+    let to = byte_index_at_char(buf, *cursor + 1);
+    buf.drain(from..to);
+}
