@@ -23,3 +23,6 @@ pub fn delete_at_cursor(buf: &mut String, cursor: &mut usize) {
 
 pub fn move_cursor_left(cursor: &mut usize) { *cursor = cursor.saturating_sub(1); }
 pub fn move_cursor_right(buf: &str, cursor: &mut usize) { if *cursor < char_count(buf) { *cursor += 1; } }
+
+pub fn move_cursor_home(cursor: &mut usize) { *cursor = 0; }
+pub fn move_cursor_end(buf: &str, cursor: &mut usize) { *cursor = char_count(buf); }
