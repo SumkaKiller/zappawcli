@@ -20,3 +20,6 @@ pub fn delete_at_cursor(buf: &mut String, cursor: &mut usize) {
     let to = byte_index_at_char(buf, *cursor + 1);
     buf.drain(from..to);
 }
+
+pub fn move_cursor_left(cursor: &mut usize) { *cursor = cursor.saturating_sub(1); }
+pub fn move_cursor_right(buf: &str, cursor: &mut usize) { if *cursor < char_count(buf) { *cursor += 1; } }
