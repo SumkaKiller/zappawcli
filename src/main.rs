@@ -66,6 +66,9 @@ fn main() -> io::Result<()> {
                             input::insert_char_at_cursor(&mut app.input, &mut app.cursor, ' ');
                             needs_redraw = true;
                         }
+                        (KeyCode::Char(c), KeyModifiers::NONE) => {
+                            if !c.is_control() { input::insert_char_at_cursor(&mut app.input, &mut app.cursor, c); needs_redraw = true; }
+                        }
                         _ => {}
                     }
                 }
