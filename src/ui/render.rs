@@ -63,3 +63,11 @@ pub fn layout_message_lines(msg: &Message, term_w: u16, chat_w: u16) -> (Vec<Str
     let bubble_w_u16 = bubble_w.min(term_w.saturating_sub(2) as usize) as u16;
     (lines, bubble_w_u16 as usize, slide, frame_color, Color::White)
 }
+
+pub fn help_panel_lines() -> [&'static str; 9] {
+    ["Commands", "/help        toggle this panel", "/clear       clear messages", "/nick NAME   change nickname", "/save        save chat to file", "/me TEXT     action message", "/demo        add demo messages", "/top         jump to top", "/bottom      jump to bottom"]
+}
+pub fn help_panel_progress(app: &App) -> f32 {
+    let elapsed = app.help_toggled_at.elapsed().as_millis() as f32;
+    (elapsed / 160.0).clamp(0.0, 1.0)
+}
