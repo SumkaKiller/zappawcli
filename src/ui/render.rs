@@ -117,5 +117,16 @@ pub fn render(stdout: &mut Stdout, app: &App) -> io::Result<()> {
     if status_w + 2 < term_w { draw_text(stdout, term_w - status_w - 2, 1, &status, Color::DarkGrey)?; }
 
     box_frame(stdout, 0, footer_y, term_w, input_h)?;
+        let inner_chat_w = term_w.saturating_sub(4);
+    let viewport_h = chat_h.saturating_sub(1) as usize;
+
+    let mut items = Vec::new();
+    let mut total_rows = 0;
+    for msg in &app.messages {
+        let layout = layout_message_lines(msg, term_w, inner_chat_w);
+        total_rows += layout.0.len() + 1;
+        items.push(layout);
+    }
+    total_rows = total_rows.saturating_sub(1);
     Ok(())
 }
