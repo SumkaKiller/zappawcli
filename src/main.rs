@@ -61,6 +61,11 @@ fn main() -> io::Result<()> {
                         (KeyCode::Char('e'), KeyModifiers::CONTROL) => { input::move_cursor_end(&app.input, &mut app.cursor); needs_redraw = true; }
                         (KeyCode::Char('u'), KeyModifiers::CONTROL) => { app.input.clear(); app.cursor = 0; needs_redraw = true; }
                         (KeyCode::Char('w'), KeyModifiers::CONTROL) => { input::delete_prev_word(&mut app.input, &mut app.cursor); needs_redraw = true; }
+                        (KeyCode::Tab, _) => {
+                            input::insert_char_at_cursor(&mut app.input, &mut app.cursor, ' ');
+                            input::insert_char_at_cursor(&mut app.input, &mut app.cursor, ' ');
+                            needs_redraw = true;
+                        }
                         _ => {}
                     }
                 }
