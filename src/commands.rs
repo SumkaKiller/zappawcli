@@ -31,6 +31,14 @@ pub fn run_command(app: &mut App, line: &str) -> String {
             if arg.is_empty() { String::from("usage: /me TEXT") } 
             else { app.messages.push(Message { text: format!("* {} {}", app.my_nick, arg), is_mine: true, created: Instant::now() }); String::from("action sent") }
         }
+                "demo" => {
+            app.messages.push(Message { text: String::from("demo: compact bubble mode"), is_mine: false, created: Instant::now() });
+            app.messages.push(Message { text: String::from("demo: smooth terminal UI"), is_mine: true, created: Instant::now() });
+            String::from("demo messages added")
+        }
+        "top" => { app.scroll = usize::MAX; String::from("jumped to top") }
+        "bottom" => { app.scroll = 0; String::from("jumped to bottom") }
+        "clearinput" => { app.input.clear(); app.cursor = 0; String::from("input cleared") }
         _ => String::from("unknown command; try /help"),
     }
 }
