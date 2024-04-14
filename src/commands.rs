@@ -14,6 +14,11 @@ pub fn run_command(app: &mut App, line: &str) -> String {
     let arg = parts.next().unwrap_or("").trim();
 
     match cmd.as_str() {
+                "help" => {
+            app.help = match app.help { HelpState::Closed => HelpState::Open, HelpState::Open => HelpState::Closed, };
+            app.help_toggled_at = Instant::now();
+            if app.help_visible() { String::from("help opened") } else { String::from("help closed") }
+        }
         _ => String::from("unknown command; try /help"),
     }
 }
