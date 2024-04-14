@@ -153,5 +153,16 @@ pub fn render(stdout: &mut Stdout, app: &App) -> io::Result<()> {
         }
         row_y += bubble_h + 1;
     }
+        let help_height = render_help_panel(stdout, app, term_w, footer_y, chat_bottom)?;
+    let usable_input_y = footer_y + 1;
+    let inner_w = term_w.saturating_sub(4) as usize;
+    let (input_text, cursor_x) = input_view(&app.input, app.cursor, inner_w);
+    let placeholder = if app.input.is_empty() { "Напиши сообщение..." } else { "" };
+    if !placeholder.is_empty() { draw_text(stdout, 2, usable_input_y, placeholder, Color::DarkGrey)?; }
+    draw_text(stdout, 2, usable_input_y, &input_text, Color::White)?;
+
+    let hint = if app.help_visible() { "Ctrl+H - close help" } else { "Enter - send  |  Ctrl+Q - quit  |  Ctrl+H - help" };
+    let hint_w = visible_width(hint) as u16;
+    if hint_w + 2 < term_w { draw_text(stdout, term_w - hint_w - 2, usable_input_y, hint, Color::DarkGrey)?; }
     Ok(())
 }
