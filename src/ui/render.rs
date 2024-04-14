@@ -92,3 +92,25 @@ pub fn render_help_panel(stdout: &mut Stdout, app: &App, term_w: u16, footer_y: 
     }
     Ok(visible_h)
 }
+
+fn command_help_text() -> &'static str { "Commands: /help /clear /nick /save /me /demo /top /bottom" }
+
+pub fn render(stdout: &mut Stdout, app: &App) -> io::Result<()> {
+    let (term_w, term_h) = terminal::size()?;
+    let term_w = term_w.max(30);
+    let term_h = term_h.max(12);
+
+    queue!(stdout, cursor::Hide, cursor::MoveTo(0, 0), terminal::Clear(ClearType::All))?;
+
+    let header_h = 3;
+    let input_h = 3;
+    let footer_y = term_h.saturating_sub(input_h);
+    let chat_top = header_h;
+    let chat_bottom = footer_y;
+    let chat_h = chat_bottom.saturating_sub(chat_top);
+
+    box_frame(stdout, 0, 0, term_w, header_h)?;
+    draw_centered(stdout, 1, term_w, commands::APP_NAME, Color::White)?;
+
+    Ok(())
+}
