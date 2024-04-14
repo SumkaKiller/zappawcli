@@ -112,5 +112,10 @@ pub fn render(stdout: &mut Stdout, app: &App) -> io::Result<()> {
     box_frame(stdout, 0, 0, term_w, header_h)?;
     draw_centered(stdout, 1, term_w, commands::APP_NAME, Color::White)?;
 
+        let status = if std::time::Instant::now() <= app.status_until { app.status.clone() } else { command_help_text().to_string() };
+    let status_w = visible_width(&status) as u16;
+    if status_w + 2 < term_w { draw_text(stdout, term_w - status_w - 2, 1, &status, Color::DarkGrey)?; }
+
+    box_frame(stdout, 0, footer_y, term_w, input_h)?;
     Ok(())
 }
