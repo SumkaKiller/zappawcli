@@ -52,3 +52,14 @@ pub fn bubble_lines(text: &str, max_bubble_w: usize) -> (Vec<String>, usize) {
     lines.push(format!("+{}+", "-".repeat(bubble_w.saturating_sub(2))));
     (lines, bubble_w)
 }
+
+pub fn layout_message_lines(msg: &Message, term_w: u16, chat_w: u16) -> (Vec<String>, usize, u16, Color, Color) {
+    let max_bubble_w = chat_w.saturating_mul(70) as usize / 100;
+    let (lines, bubble_w) = bubble_lines(&msg.text, max_bubble_w.max(16));
+    let age_ms = msg.created.elapsed().as_millis() as f32;
+    let progress = (age_ms / 180.0).clamp(0.0, 1.0);
+    let slide = if progress >= 1.0 { 0u16 } else { ((1.0 - progress) * if msg.is_mine { 6.0 } else { 4.0 }) as u16 };
+    let frame_color = if msg.is_mine { Color::Cyan } else { Color::Green };
+    let bubble_w_u16 = bubble_w.min(term_w.saturating_sub(2) as usize) as u16;
+    (lines, bubble_w_u16 as usize, slide, frame_color, Color::White)
+}
