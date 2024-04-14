@@ -128,5 +128,30 @@ pub fn render(stdout: &mut Stdout, app: &App) -> io::Result<()> {
         items.push(layout);
     }
     total_rows = total_rows.saturating_sub(1);
+        let max_scroll = total_rows.saturating_sub(viewport_h);
+    let scroll = app.scroll.min(max_scroll);
+    let view_start = max_scroll.saturating_sub(scroll);
+
+    let mut row_y = 0;
+    for (idx, (lines, bubble_w, slide, frame_color, body_color)) in items.iter().enumerate() {
+        let msg = &app.messages[idx];
+        let bubble_h = lines.len();
+        let base_x = if msg.is_mine { term_w.saturating_sub(*bubble_w as u16 + 2) } else { 1 };
+        let bubble_x = base_x.saturating_add(*slide);
+        let start_row = row_y;
+        let end_row = row_y + bubble_h;
+        
+        if end_row > view_start && start_row < view_start + viewport_h {
+            for (line_i, line) in lines.iter().enumerate() {
+                let abs_row = row_y + line_i;
+                if abs_row < view_start || abs_row >= view_start + viewport_h { continue; }
+                let y = chat_top + 1 + (abs_row - view_start) as u16;
+                let clipped = truncate_to_width(line, term_w.saturating_sub(bubble_x + 1) as usize);
+                let color = if line_i == 0 || line_i + 1 == lines.len() { *frame_color } else { *body_color };
+                draw_text(stdout, bubble_x, y, &clipped, color)?;
+            }
+        }
+        row_y += bubble_h + 1;
+    }
     Ok(())
 }
