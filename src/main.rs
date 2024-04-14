@@ -24,6 +24,26 @@ fn main() -> io::Result<()> {
     let mut needs_redraw = true;
     render(&mut stdout, &app)?;
 
+        loop {
+        let timeout = if has_recent_animation(&app) || app.help_visible() { Duration::from_millis(16) } else { Duration::from_millis(200) };
+        if event::poll(timeout)? {
+            match event::read()? {
+                Event::Key(key) => {
+                    if key.kind != KeyEventKind::Press { continue; }
+                    match (key.code, key.modifiers) {
+                        (KeyCode::Char('q'), KeyModifiers::CONTROL) | (KeyCode::Char('c'), KeyModifiers::CONTROL) => break,
+                        _ => {}
+                    }
+                }
+                Event::Resize(_, _) => { needs_redraw = true; }
+                _ => {}
+            }
+        }
+        if needs_redraw || has_recent_animation(&app) || app.help_visible() {
+            render(&mut stdout, &app)?;
+            needs_redraw = false;
+        }
+    }
     execute!(stdout, cursor::Show, terminal::LeaveAlternateScreen, ResetColor)?;
     terminal::disable_raw_mode()?;
     Ok(())
