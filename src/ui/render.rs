@@ -35,3 +35,20 @@ pub fn prompt_nickname() -> io::Result<String> {
     let nick = nick.trim();
     Ok(if nick.is_empty() { "You".to_string() } else { nick.to_string() })
 }
+
+pub fn bubble_lines(text: &str, max_bubble_w: usize) -> (Vec<String>, usize) {
+    let inner_w = max_bubble_w.saturating_sub(4).max(1);
+    let wrapped = wrap_text(text, inner_w);
+    let mut content_w = 0;
+    for line in &wrapped { content_w = content_w.max(visible_width(line)); }
+    let bubble_w = (content_w + 4).max(10).min(max_bubble_w.max(10));
+    let inner_pad = bubble_w.saturating_sub(4);
+    let mut lines = Vec::with_capacity(wrapped.len() + 2);
+    lines.push(format!("+{}+", "-".repeat(bubble_w.saturating_sub(2))));
+    for line in wrapped {
+        let body = pad_to_width(&truncate_to_width(&line, inner_pad), inner_pad);
+        lines.push(format!("| {} |", body));
+    }
+    lines.push(format!("+{}+", "-".repeat(bubble_w.saturating_sub(2))));
+    (lines, bubble_w)
+}
