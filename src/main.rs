@@ -53,6 +53,8 @@ fn main() -> io::Result<()> {
                         (KeyCode::Right, _) => { input::move_cursor_right(&app.input, &mut app.cursor); needs_redraw = true; }
                         (KeyCode::Home, _) => { input::move_cursor_home(&mut app.cursor); needs_redraw = true; }
                         (KeyCode::End, _) => { input::move_cursor_end(&app.input, &mut app.cursor); needs_redraw = true; }
+                        (KeyCode::Up, _) => { app.scroll = app.scroll.saturating_add(2); needs_redraw = true; }
+                        (KeyCode::Down, _) => { app.scroll = app.scroll.saturating_sub(2); needs_redraw = true; }
                         _ => {}
                     }
                 }
