@@ -59,6 +59,8 @@ fn main() -> io::Result<()> {
                         (KeyCode::PageDown, _) => { app.scroll = app.scroll.saturating_sub(8); needs_redraw = true; }
                         (KeyCode::Char('a'), KeyModifiers::CONTROL) => { input::move_cursor_home(&mut app.cursor); needs_redraw = true; }
                         (KeyCode::Char('e'), KeyModifiers::CONTROL) => { input::move_cursor_end(&app.input, &mut app.cursor); needs_redraw = true; }
+                        (KeyCode::Char('u'), KeyModifiers::CONTROL) => { app.input.clear(); app.cursor = 0; needs_redraw = true; }
+                        (KeyCode::Char('w'), KeyModifiers::CONTROL) => { input::delete_prev_word(&mut app.input, &mut app.cursor); needs_redraw = true; }
                         _ => {}
                     }
                 }
