@@ -9,7 +9,13 @@ pub fn run_command(app: &mut App, line: &str) -> String {
         app.messages.push(Message { text: raw.to_string(), is_mine: true, created: Instant::now() });
         return String::from("sent");
     }
-    String::from("command mode fallback")
+        let mut parts = raw.splitn(2, ' ');
+    let cmd = parts.next().unwrap_or("").trim_start_matches('/').to_lowercase();
+    let arg = parts.next().unwrap_or("").trim();
+
+    match cmd.as_str() {
+        _ => String::from("unknown command; try /help"),
+    }
 }
 
 pub const APP_NAME: &str = "zappawcli";
