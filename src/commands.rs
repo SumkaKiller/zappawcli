@@ -19,6 +19,7 @@ pub fn run_command(app: &mut App, line: &str) -> String {
             app.help_toggled_at = Instant::now();
             if app.help_visible() { String::from("help opened") } else { String::from("help closed") }
         }
+                "clear" => { app.messages.clear(); String::from("chat cleared") }
         _ => String::from("unknown command; try /help"),
     }
 }
