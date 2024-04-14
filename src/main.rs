@@ -38,6 +38,15 @@ fn main() -> io::Result<()> {
                             app.set_status(if app.help_visible() { "help opened" } else { "help closed" }, Duration::from_secs(2));
                             needs_redraw = true;
                         }
+                        (KeyCode::Enter, _) => {
+                            let text = app.input.trim().to_string();
+                            if !text.is_empty() {
+                                let result = commands::run_command(&mut app, &text);
+                                app.set_status(result, Duration::from_secs(2));
+                                app.input.clear(); app.cursor = 0; app.scroll = 0;
+                            }
+                            needs_redraw = true;
+                        }
                         _ => {}
                     }
                 }
