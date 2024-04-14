@@ -19,3 +19,8 @@ pub fn box_frame(stdout: &mut Stdout, x: u16, y: u16, w: u16, h: u16) -> io::Res
     hline(stdout, x, y + h - 1, w)?;
     Ok(())
 }
+
+pub fn draw_text(stdout: &mut Stdout, x: u16, y: u16, text: &str, color: Color) -> io::Result<()> {
+    queue!(stdout, SetForegroundColor(color), cursor::MoveTo(x, y), Print(text), ResetColor)?;
+    Ok(())
+}
