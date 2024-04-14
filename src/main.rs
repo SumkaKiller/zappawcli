@@ -48,6 +48,7 @@ fn main() -> io::Result<()> {
                             needs_redraw = true;
                         }
                         (KeyCode::Backspace, _) => { input::delete_before_cursor(&mut app.input, &mut app.cursor); needs_redraw = true; }
+                        (KeyCode::Delete, _) => { input::delete_at_cursor(&mut app.input, &mut app.cursor); needs_redraw = true; }
                         _ => {}
                     }
                 }
