@@ -11,4 +11,9 @@ use app::{App, HelpState};
 use commands::APP_NAME;
 use ui::render::{prompt_nickname, render};
 
+fn has_recent_animation(app: &App) -> bool {
+    app.messages.last().map(|m| m.created.elapsed() < Duration::from_millis(220)).unwrap_or(false)
+}
+
 fn main() {}
+
