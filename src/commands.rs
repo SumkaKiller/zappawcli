@@ -3,6 +3,15 @@ use std::io::{self, Write};
 use std::time::Instant;
 use crate::app::{App, HelpState, Message};
 
+pub fn run_command(app: &mut App, line: &str) -> String {
+    let raw = line.trim();
+    if !raw.starts_with('/') {
+        app.messages.push(Message { text: raw.to_string(), is_mine: true, created: Instant::now() });
+        return String::from("sent");
+    }
+    String::from("command mode fallback")
+}
+
 pub const APP_NAME: &str = "zappawcli";
 pub const COMMAND_FILE: &str = "zappawcli_messages.txt";
 
