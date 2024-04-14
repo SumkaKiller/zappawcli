@@ -24,6 +24,9 @@ pub fn run_command(app: &mut App, line: &str) -> String {
             if arg.is_empty() { String::from("usage: /nick NAME") } 
             else { app.my_nick = arg.to_string(); format!("nickname changed to {}", app.my_nick) }
         }
+                "save" => match save_messages(COMMAND_FILE, app) {
+            Ok(()) => format!("saved to {}", COMMAND_FILE), Err(e) => format!("save failed: {}", e),
+        },
         _ => String::from("unknown command; try /help"),
     }
 }
