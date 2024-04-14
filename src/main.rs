@@ -32,6 +32,12 @@ fn main() -> io::Result<()> {
                     if key.kind != KeyEventKind::Press { continue; }
                     match (key.code, key.modifiers) {
                         (KeyCode::Char('q'), KeyModifiers::CONTROL) | (KeyCode::Char('c'), KeyModifiers::CONTROL) => break,
+                        (KeyCode::Char('h'), KeyModifiers::CONTROL) | (KeyCode::F(1), _) => {
+                            app.help = match app.help { HelpState::Closed => HelpState::Open, HelpState::Open => HelpState::Closed };
+                            app.help_toggled_at = Instant::now();
+                            app.set_status(if app.help_visible() { "help opened" } else { "help closed" }, Duration::from_secs(2));
+                            needs_redraw = true;
+                        }
                         _ => {}
                     }
                 }
