@@ -24,3 +24,9 @@ pub fn draw_text(stdout: &mut Stdout, x: u16, y: u16, text: &str, color: Color) 
     queue!(stdout, SetForegroundColor(color), cursor::MoveTo(x, y), Print(text), ResetColor)?;
     Ok(())
 }
+
+pub fn draw_centered(stdout: &mut Stdout, y: u16, term_w: u16, text: &str, color: Color) -> io::Result<()> {
+    let clipped = truncate_to_width(text, term_w as usize);
+    let x = term_w.saturating_sub(visible_width(&clipped) as u16) / 2;
+    draw_text(stdout, x, y, &clipped, color)
+}
