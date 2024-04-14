@@ -164,5 +164,15 @@ pub fn render(stdout: &mut Stdout, app: &App) -> io::Result<()> {
     let hint = if app.help_visible() { "Ctrl+H - close help" } else { "Enter - send  |  Ctrl+Q - quit  |  Ctrl+H - help" };
     let hint_w = visible_width(hint) as u16;
     if hint_w + 2 < term_w { draw_text(stdout, term_w - hint_w - 2, usable_input_y, hint, Color::DarkGrey)?; }
+        let cursor_pos = 2 + cursor_x as u16;
+    queue!(stdout, cursor::MoveTo(cursor_pos.min(term_w.saturating_sub(2)), usable_input_y), cursor::Show)?;
+
+    if help_height > 0 {
+        let bar_x = 1;
+        let bar_w = term_w.saturating_sub(2);
+        let bar_y = chat_bottom.saturating_sub(help_height);
+        if bar_w > 2 { queue!(stdout, cursor::MoveTo(bar_x, bar_y.saturating_sub(1)), SetForegroundColor(Color::DarkGrey), Print(""), ResetColor)?; }
+    }
+    stdout.flush()?;
     Ok(())
 }
