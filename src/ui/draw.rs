@@ -30,3 +30,20 @@ pub fn draw_centered(stdout: &mut Stdout, y: u16, term_w: u16, text: &str, color
     let x = term_w.saturating_sub(visible_width(&clipped) as u16) / 2;
     draw_text(stdout, x, y, &clipped, color)
 }
+
+pub fn input_view(input: &str, cursor: usize, max_w: usize) -> (String, usize) {
+    let chars: Vec<char> = input.chars().collect();
+    if max_w == 0 { return (String::new(), 0); }
+    let start = cursor.saturating_sub(max_w.saturating_sub(1));
+    let mut out = String::new();
+    let mut width = 0;
+    let mut cursor_x = 0;
+    for (i, ch) in chars.iter().enumerate().skip(start) {
+        let cw = char_width(*ch);
+        if width + cw > max_w { break; }
+        if i < cursor { cursor_x += cw; }
+        out.push(*ch);
+        width += cw;
+    }
+    (out, cursor_x)
+}
