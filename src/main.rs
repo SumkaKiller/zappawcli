@@ -51,6 +51,8 @@ fn main() -> io::Result<()> {
                         (KeyCode::Delete, _) => { input::delete_at_cursor(&mut app.input, &mut app.cursor); needs_redraw = true; }
                         (KeyCode::Left, _) => { input::move_cursor_left(&mut app.cursor); needs_redraw = true; }
                         (KeyCode::Right, _) => { input::move_cursor_right(&app.input, &mut app.cursor); needs_redraw = true; }
+                        (KeyCode::Home, _) => { input::move_cursor_home(&mut app.cursor); needs_redraw = true; }
+                        (KeyCode::End, _) => { input::move_cursor_end(&app.input, &mut app.cursor); needs_redraw = true; }
                         _ => {}
                     }
                 }
