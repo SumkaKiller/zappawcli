@@ -27,6 +27,10 @@ pub fn run_command(app: &mut App, line: &str) -> String {
                 "save" => match save_messages(COMMAND_FILE, app) {
             Ok(()) => format!("saved to {}", COMMAND_FILE), Err(e) => format!("save failed: {}", e),
         },
+                "me" => {
+            if arg.is_empty() { String::from("usage: /me TEXT") } 
+            else { app.messages.push(Message { text: format!("* {} {}", app.my_nick, arg), is_mine: true, created: Instant::now() }); String::from("action sent") }
+        }
         _ => String::from("unknown command; try /help"),
     }
 }
