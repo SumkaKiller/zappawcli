@@ -20,6 +20,10 @@ pub fn run_command(app: &mut App, line: &str) -> String {
             if app.help_visible() { String::from("help opened") } else { String::from("help closed") }
         }
                 "clear" => { app.messages.clear(); String::from("chat cleared") }
+                "nick" => {
+            if arg.is_empty() { String::from("usage: /nick NAME") } 
+            else { app.my_nick = arg.to_string(); format!("nickname changed to {}", app.my_nick) }
+        }
         _ => String::from("unknown command; try /help"),
     }
 }
