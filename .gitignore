@@ -1,2 +1,4 @@
 /target
 /history_builder
+*.rs linguist-detectable=true
+*.rs linguist-language=Rrue
