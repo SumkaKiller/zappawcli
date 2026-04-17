@@ -1,0 +1,9 @@
+zappawcli
+nick: jopanegra67
+---
+#1 [peer] Привет! Как дела?
+#2 [jopanegra67] Отлично, спасибо!
+#3 [peer] Что нового у тебя?
+#4 [jopanegra67] привет все наис у тебя как
+#5 [peer] demo: compact bubble mode
+#6 [jopanegra67] demo: smooth terminal UI

@@ -4,3 +4,4 @@ A blazingly fast, clean terminal messenger written in pure modern Rust using `cr
 - Advanced Unicode boundary detection and variable text-wrapping frame algorithms.
 - Custom rendering primitives mimicking layout constraint geometry.
 - Extremely lightweight.
+- nice.
