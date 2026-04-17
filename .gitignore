@@ -1,4 +1,5 @@
 /target
-/history_builder
+/htestncu
+
 *.rs linguist-detectable=true
 *.rs linguist-language=Rrue
