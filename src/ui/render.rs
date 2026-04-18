@@ -205,7 +205,8 @@ pub fn render(f: &mut Frame, app: &App) {
         
     let header_content = ratatui::text::Line::from(vec![
         Span::styled(format!(" {} ", APP_NAME), Style::default().fg(RColor::LightRed).add_modifier(Modifier::BOLD)),
-        Span::styled(format!(" | {} ", status_text), Style::default().fg(RColor::Yellow)),
+        Span::styled(format!(" | Room: {} | ", app.room), Style::default().fg(RColor::DarkGray)),
+        Span::styled(format!("{} ", status_text), Style::default().fg(RColor::Yellow)),
     ]);
     
     let header = Paragraph::new(header_content)
