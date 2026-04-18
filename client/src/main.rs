@@ -1,3 +1,4 @@
+mod api;
 mod app;
 mod commands;
 mod input;
@@ -15,18 +16,19 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use app::{App, HelpState};
-use ui::render::{prompt_connection_info, render};
+use app::{App, HelpState, Message};
+use ui::render::{help_panel_progress, prompt_auth_info, render};
 
 // Helper to determine if we should animate at 60fps
 fn needs_animation(app: &App) -> bool {
-    let recent_message = app.messages
+    let recent_message = app
+        .messages
         .last()
         .map(|m| m.created.elapsed() < Duration::from_millis(300))
         .unwrap_or(false);
-    
-    let help_open_animation = app.help_visible() && ui::render::help_panel_progress(app) < 1.0;
-    let help_close_animation = !app.help_visible() && ui::render::help_panel_progress(app) < 1.0;
+
+    let help_open_animation = app.help_visible() && help_panel_progress(app) < 1.0;
+    let help_close_animation = !app.help_visible() && help_panel_progress(app) < 1.0;
 
     recent_message || help_open_animation || help_close_animation
 }
@@ -34,25 +36,57 @@ fn needs_animation(app: &App) -> bool {
 pub enum AppEvent {
     Input(Event),
     Tick,
+    /// New messages fetched from server
+    ServerMessages(Vec<api::MessageResponse>),
 }
 
 fn main() -> io::Result<()> {
-    let (nick, room, password) = prompt_connection_info()?;
+    // ── Auth prompt ───────────────────────────────────────────
+    let auth_info = prompt_auth_info()?;
 
+    // ── Authenticate ──────────────────────────────────────────
+    let auth_result = if auth_info.is_register {
+        api::register(&auth_info.server_url, &auth_info.username, &auth_info.password)
+    } else {
+        api::login(&auth_info.server_url, &auth_info.username, &auth_info.password)
+    };
+
+    let auth_resp = match auth_result {
+        Ok(resp) => resp,
+        Err(e) => {
+            eprintln!("\nAuthentication failed: {e}");
+            eprintln!("Press Enter to exit...");
+            let mut buf = String::new();
+            let _ = io::stdin().read_line(&mut buf);
+            return Ok(());
+        }
+    };
+
+    // ── Enter TUI ─────────────────────────────────────────────
     terminal::enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
-    
+
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = App::new(&nick, &room, &password);
+    let mut app = App::new(&auth_resp.username, &auth_info.server_url, &auth_resp.token);
+    app.set_status(
+        if auth_info.is_register {
+            "Registered successfully!"
+        } else {
+            "Logged in successfully!"
+        },
+        Duration::from_secs(3),
+    );
+
     let mut needs_redraw = true;
 
     let (tx, rx) = mpsc::channel();
     let tick_rate = Duration::from_millis(250);
-    
-    // Background thread for input/network events
+
+    // ── Background thread: input events ───────────────────────
+    let tx_input = tx.clone();
     thread::spawn(move || {
         let mut last_tick = Instant::now();
         loop {
@@ -62,13 +96,13 @@ fn main() -> io::Result<()> {
 
             if event::poll(timeout).expect("poll failed") {
                 let evt = event::read().expect("can read events");
-                if tx.send(AppEvent::Input(evt)).is_err() {
+                if tx_input.send(AppEvent::Input(evt)).is_err() {
                     break;
                 }
             }
 
             if last_tick.elapsed() >= tick_rate {
-                if tx.send(AppEvent::Tick).is_err() {
+                if tx_input.send(AppEvent::Tick).is_err() {
                     break;
                 }
                 last_tick = Instant::now();
@@ -76,14 +110,50 @@ fn main() -> io::Result<()> {
         }
     });
 
+    // ── Background thread: poll server for messages ───────────
+    let tx_poll = tx.clone();
+    let poll_server = auth_info.server_url.clone();
+    let poll_token = auth_resp.token.clone();
+    thread::spawn(move || {
+        loop {
+            thread::sleep(Duration::from_secs(2));
+
+            match api::fetch_messages(&poll_server, &poll_token, None, Some(100)) {
+                Ok(msgs) => {
+                    if tx_poll.send(AppEvent::ServerMessages(msgs)).is_err() {
+                        break;
+                    }
+                }
+                Err(_) => {
+                    // Silently retry on next tick
+                }
+            }
+        }
+    });
+
+    // ── Initial message fetch ─────────────────────────────────
+    if let Ok(msgs) = api::fetch_messages(&auth_info.server_url, &auth_resp.token, None, Some(50)) {
+        for m in &msgs {
+            app.messages.push(Message {
+                text: m.content.clone(),
+                sender: m.username.clone(),
+                is_mine: m.username == app.username,
+                created: Instant::now() - Duration::from_millis(500), // render instantly
+                remote_id: m.id.clone(),
+            });
+        }
+        if let Some(last) = msgs.last() {
+            app.last_seen_ts = Some(last.created_at.clone());
+        }
+    }
+
+    // ── Main event loop ───────────────────────────────────────
     loop {
-        // Redraw if triggered or if an animation is actively playing
         if needs_redraw || needs_animation(&app) {
             terminal.draw(|f| render(f, &app))?;
             needs_redraw = false;
         }
 
-        // Throttle poll duration if animated
         let timeout = if needs_animation(&app) {
             Duration::from_millis(16)
         } else {
@@ -92,6 +162,29 @@ fn main() -> io::Result<()> {
 
         if let Ok(app_event) = rx.recv_timeout(timeout) {
             match app_event {
+                AppEvent::ServerMessages(msgs) => {
+                    // Merge server messages — only add ones we haven't seen
+                    let mut new_count = 0;
+                    for m in &msgs {
+                        let already_have = app.messages.iter().any(|existing| existing.remote_id == m.id);
+                        if !already_have {
+                            app.messages.push(Message {
+                                text: m.content.clone(),
+                                sender: m.username.clone(),
+                                is_mine: m.username == app.username,
+                                created: Instant::now(),
+                                remote_id: m.id.clone(),
+                            });
+                            new_count += 1;
+                        }
+                    }
+                    if let Some(last) = msgs.last() {
+                        app.last_seen_ts = Some(last.created_at.clone());
+                    }
+                    if new_count > 0 {
+                        needs_redraw = true;
+                    }
+                }
                 AppEvent::Input(Event::Key(key)) => {
                     if key.kind != KeyEventKind::Press {
                         continue;
@@ -108,13 +201,13 @@ fn main() -> io::Result<()> {
                             }
                         }
                         (KeyCode::Char('d'), KeyModifiers::CONTROL) => break,
-                        
+
                         (KeyCode::Esc, KeyModifiers::NONE) => {
                             app.input.clear();
                             app.cursor = 0;
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Char('h'), KeyModifiers::CONTROL) | (KeyCode::F(1), _) => {
                             app.help = match app.help {
                                 HelpState::Closed => HelpState::Open,
@@ -122,12 +215,16 @@ fn main() -> io::Result<()> {
                             };
                             app.help_toggled_at = Instant::now();
                             app.set_status(
-                                if app.help_visible() { "Help opened" } else { "Help closed" },
+                                if app.help_visible() {
+                                    "Help opened"
+                                } else {
+                                    "Help closed"
+                                },
                                 Duration::from_secs(2),
                             );
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Enter, _) => {
                             let text = app.input.trim().to_string();
                             if !text.is_empty() {
@@ -139,87 +236,88 @@ fn main() -> io::Result<()> {
                             }
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Backspace, _) => {
-                            input::delete_before_cursor(&mut app.input, &mut app.cursor);
+                            input::erase_prev(&mut app.input, &mut app.cursor);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Delete, _) => {
-                            input::delete_at_cursor(&mut app.input, &mut app.cursor);
+                            input::delAtCursor(&mut app.input, &mut app.cursor);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Left, _) => {
-                            input::move_cursor_left(&mut app.cursor);
+                            input::shift_caret_left(&mut app.cursor);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Right, _) => {
-                            input::move_cursor_right(&app.input, &mut app.cursor);
+                            input::moveRight(&app.input, &mut app.cursor);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Home, _) => {
-                            input::move_cursor_home(&mut app.cursor);
+                            input::jump_to_start(&mut app.cursor);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::End, _) => {
-                            input::move_cursor_end(&app.input, &mut app.cursor);
+                            input::goToEnd(&app.input, &mut app.cursor);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Up, _) => {
                             app.scroll = app.scroll.saturating_add(2);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Down, _) => {
                             app.scroll = app.scroll.saturating_sub(2);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::PageUp, _) => {
                             app.scroll = app.scroll.saturating_add(8);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::PageDown, _) => {
                             app.scroll = app.scroll.saturating_sub(8);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Char('a'), KeyModifiers::CONTROL) => {
-                            input::move_cursor_home(&mut app.cursor);
+                            input::jump_to_start(&mut app.cursor);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Char('e'), KeyModifiers::CONTROL) => {
-                            input::move_cursor_end(&app.input, &mut app.cursor);
+                            input::goToEnd(&app.input, &mut app.cursor);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Char('u'), KeyModifiers::CONTROL) => {
                             app.input.clear();
                             app.cursor = 0;
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Char('w'), KeyModifiers::CONTROL) => {
-                            input::delete_prev_word(&mut app.input, &mut app.cursor);
+                            input::sweep_previous_word(&mut app.input, &mut app.cursor);
                             needs_redraw = true;
                         }
-                        
+
                         (KeyCode::Tab, _) => {
-                            input::insert_char_at_cursor(&mut app.input, &mut app.cursor, ' ');
-                            input::insert_char_at_cursor(&mut app.input, &mut app.cursor, ' ');
+                            input::insertChar(&mut app.input, &mut app.cursor, ' ');
+                            input::insertChar(&mut app.input, &mut app.cursor, ' ');
                             needs_redraw = true;
                         }
-                        
-                        (KeyCode::Char(c), KeyModifiers::NONE) | (KeyCode::Char(c), KeyModifiers::SHIFT) => {
+
+                        (KeyCode::Char(c), KeyModifiers::NONE)
+                        | (KeyCode::Char(c), KeyModifiers::SHIFT) => {
                             if !c.is_control() {
-                                input::insert_char_at_cursor(&mut app.input, &mut app.cursor, c);
+                                input::insertChar(&mut app.input, &mut app.cursor, c);
                                 needs_redraw = true;
                             }
                         }
@@ -238,6 +336,6 @@ fn main() -> io::Result<()> {
     terminal::disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     terminal.show_cursor()?;
-    
+
     Ok(())
 }

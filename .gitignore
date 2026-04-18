@@ -1,5 +1,7 @@
 /target
 /htestncu
+/server
+.gitignore
 
 *.rs linguist-detectable=true
 *.rs linguist-language=Rrue
