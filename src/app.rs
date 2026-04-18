@@ -15,6 +15,8 @@ pub enum HelpState {
 
 pub struct App {
     pub my_nick: String,
+    pub room: String,
+    pub password: String,
     pub messages: Vec<Message>,
     pub input: String,
     pub cursor: usize,
@@ -27,26 +29,22 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(nick: &str) -> Self {
-        // slightly backdated so initial fade-in effects don't replay
+    pub fn new(nick: &str, room: &str, password: &str) -> Self {
         let t_base = Instant::now() - Duration::from_millis(300);
         
         Self {
             my_nick: nick.to_string(),
+            room: room.to_string(),
+            password: password.to_string(),
             messages: vec![
                 Message {
-                    text: "Привет! Как дела?".to_string(),
+                    text: format!("Joined room: {}", room),
                     is_mine: false,
                     created: t_base,
                 },
                 Message {
                     text: "Отлично, спасибо!".to_string(),
                     is_mine: true,
-                    created: t_base,
-                },
-                Message {
-                    text: "Что нового у тебя?".to_string(),
-                    is_mine: false,
                     created: t_base,
                 },
             ],
